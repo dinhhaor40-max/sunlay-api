@@ -54,11 +54,29 @@ app.get('/stats', async (req, res) => {
   }
 });
 
-// Auto fetch mỗi 3 giây, chỉ lưu DB khi có phiên mới
+// Kiểm tra dữ liệu đủ field quan trọng không
+function isValidData(data) {
+  return data &&
+    data.phien &&
+    data.phien_dudoan &&
+    data.du_doan_van_sau &&
+    (data.du_doan_van_sau === 'Tài' || data.du_doan_van_sau === 'Xỉu') &&
+    data.ket_qua_hien_tai &&
+    data.do_tin_cay &&
+    data.giai_thich_chi_tiet;
+}
+
+// Auto fetch mỗi 3 giây, chỉ lưu DB khi có phiên mới và dữ liệu đầy đủ
 async function autoFetch() {
   try {
     const r = await fetch(SOURCE_API);
     const data = await r.json();
+
+    if (!isValidData(data)) {
+      console.log(`[${new Date().toLocaleTimeString()}] ⚠️ Dữ liệu không đầy đủ, bỏ qua phiên ${data?.phien}`);
+      return;
+    }
+
     latestData = data;
 
     if (data.phien !== lastPhien) {
